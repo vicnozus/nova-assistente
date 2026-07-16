@@ -16,7 +16,7 @@ Edite o `.env` e informe `GEMINI_KEY` somente se quiser usar Gemini como alterna
 ## Executar
 
 ```powershell
-python front.py
+python -m NOVA.main
 ```
 
 ## Exemplos
@@ -29,5 +29,5 @@ python front.py
 ## Testes
 
 ```powershell
-python -m unittest discover -s tests
+python -m unittest discover -s NOVA/tests
 ```

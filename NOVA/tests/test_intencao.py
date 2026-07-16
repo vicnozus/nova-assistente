@@ -1,6 +1,6 @@
 import unittest
 
-from intencao import interpretar_local, limpar_valor
+from NOVA.models.intent import interpretar_local, limpar_valor
 
 
 class InterpretarIntencaoTest(unittest.TestCase):

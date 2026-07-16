@@ -1,32 +1,40 @@
 import threading
 from queue import Empty, Queue
-from pathlib import Path
 
 import customtkinter as ctk
 
-from comando import criar_arquivo_texto, preparar_nome_arquivo, processar_comando
-from intencao import interpretar_local
+from NOVA.commands.actions import criar_arquivo_texto, preparar_nome_arquivo, processar_comando
+from NOVA.models.intent import interpretar_local
+from NOVA.utils.paths import ICON_PATH
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
 
 class NovaApp(ctk.CTk):
-    def __init__(self):
+    def __init__(self, usuario_nome="Usuario"):
         self.aguardando_arquivo = False
         self.nome_arquivo = ""
         self.historico_comandos = []
         self.modo_atual = "dark"
         self.processando = False
         self.resultados = Queue()
+        self.usuario_nome = usuario_nome
         super().__init__()
 
         self.title("Nova")
-        self.iconbitmap(str(Path(__file__).parent / "assets" / "Nova_imagem.ico"))
+        self.configurar_icone()
         self.geometry("900x550")
         self.minsize(700, 450)
         self.criar_interface()
         self.after(100, self.verificar_resultados)
+
+    def configurar_icone(self):
+        if ICON_PATH.exists():
+            try:
+                self.iconbitmap(str(ICON_PATH))
+            except ctk.tkinter.TclError:
+                pass
 
     def criar_interface(self):
         self.configure(fg_color=("#f4f4f8", "#0b0b0f"))
@@ -119,7 +127,7 @@ class NovaApp(ctk.CTk):
         self.atualizar_menu("chat")
         self.limpar_main()
         ctk.CTkLabel(
-            self.main, text="Olá, Victor.\nO que vamos fazer hoje?", font=("Segoe UI", 24, "bold"), text_color=("#17171c", "#ffffff")
+            self.main, text=f"Olá, {self.usuario_nome}.\nO que vamos fazer hoje?", font=("Segoe UI", 24, "bold"), text_color=("#17171c", "#ffffff")
         ).grid(row=0, column=0, sticky="w", pady=(0, 15))
 
         self.chat = ctk.CTkTextbox(

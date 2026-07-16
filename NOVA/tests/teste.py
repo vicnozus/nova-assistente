@@ -1,6 +1,6 @@
 """Pequena demonstração manual da interpretação local de comandos."""
 
-from intencao import interpretar_local
+from NOVA.models.intent import interpretar_local
 
 
 if __name__ == "__main__":

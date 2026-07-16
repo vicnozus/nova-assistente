@@ -1,0 +1,1 @@
+"""Comandos executáveis pela Nova."""

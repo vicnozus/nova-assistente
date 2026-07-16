@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from abrir_app import carregar_apps_salvos, normalizar_nome, resolver_app, salvar_app
+from NOVA.commands.app_launcher import carregar_apps_salvos, normalizar_nome, resolver_app, salvar_app
 
 
 class AbrirAppTest(unittest.TestCase):

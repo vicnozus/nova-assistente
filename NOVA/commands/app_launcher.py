@@ -5,10 +5,11 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from intencao import limpar_valor
+from NOVA.models.intent import limpar_valor
+from NOVA.utils.paths import SAVED_APPS_PATH
 
 
-ARQUIVO_APPS_SALVOS = Path(__file__).with_name("apps_salvos.json")
+ARQUIVO_APPS_SALVOS = SAVED_APPS_PATH
 
 APPS_PADRAO = {
     "bloco de notas": "notepad.exe",

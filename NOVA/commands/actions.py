@@ -7,9 +7,9 @@ import zipfile
 
 import requests
 
-from abrir_app import resolver_app
-from ia_key import inteligencia_assistente
-from intencao import interpretar_local, limpar_valor
+from NOVA.commands.app_launcher import resolver_app
+from NOVA.models.ai import inteligencia_assistente
+from NOVA.models.intent import interpretar_local, limpar_valor
 
 
 def abrir_app(nome_app):
