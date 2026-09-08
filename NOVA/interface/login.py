@@ -15,7 +15,8 @@ class LoginApp(ctk.CTk):
         inicializar_banco()
 
         self.modo = "login"
-        self.usuario_logado = None
+        self.usuario_id = None
+        self.usuario_nome = None
 
         self.title("Nova - Entrar")
         self.geometry("820x520")
@@ -161,10 +162,11 @@ class LoginApp(ctk.CTk):
                 self.senha.delete(0, "end")
             return
 
-        sucesso, mensagem, nome = autenticar_usuario(email, senha)
+        sucesso, mensagem, usuario_id, nome = autenticar_usuario(email, senha)
         self.exibir_mensagem(mensagem, erro=not sucesso)
         if sucesso:
-            self.usuario_logado = nome
+            self.usuario_id = usuario_id
+            self.usuario_nome = nome
             self.after(250, self.abrir_nova)
 
     def exibir_mensagem(self, texto, erro=True):
@@ -172,9 +174,15 @@ class LoginApp(ctk.CTk):
         self.mensagem.configure(text=texto, text_color=cor)
 
     def abrir_nova(self):
-        nome = self.usuario_logado or "Usuario"
+        nome = self.usuario_nome or "Usuario"
+
         self.destroy()
-        app = NovaApp(usuario_nome=nome)
+
+        app = NovaApp(
+            usuario_id=self.usuario_id,
+            usuario_nome=nome,
+        )
+
         app.mainloop()
 
 

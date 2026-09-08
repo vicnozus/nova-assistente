@@ -4,6 +4,8 @@ from queue import Empty, Queue
 import customtkinter as ctk
 
 from NOVA.commands.actions import criar_arquivo_texto, preparar_nome_arquivo, processar_comando
+from NOVA.database.conversas import criar_conversa, listar_conversas_do_usuario
+from NOVA.database.mensagens import criar_mensagem, listar_mensagens_da_conversa
 from NOVA.models.intent import interpretar_local
 from NOVA.utils.paths import ICON_PATH
 
@@ -12,20 +14,23 @@ ctk.set_default_color_theme("dark-blue")
 
 
 class NovaApp(ctk.CTk):
-    def __init__(self, usuario_nome="Usuario"):
+    def __init__(self, usuario_id, usuario_nome="Usuario"):
         self.aguardando_arquivo = False
         self.nome_arquivo = ""
         self.historico_comandos = []
         self.modo_atual = "dark"
         self.processando = False
         self.resultados = Queue()
+        self.usuario_id = usuario_id
         self.usuario_nome = usuario_nome
+        self.conversa_id_atual = None
+
         super().__init__()
 
         self.title("Nova")
         self.configurar_icone()
-        self.geometry("900x550")
-        self.minsize(700, 450)
+        self.geometry("1200x650")
+        self.minsize(800, 650)
         self.criar_interface()
         self.after(100, self.verificar_resultados)
 
@@ -123,28 +128,102 @@ class NovaApp(ctk.CTk):
                     text_color=("#555555", "#aaaaaa"),
                 )
 
-    def mostrar_chat(self):
+    def mostrar_chat(self, conversa_id=None):
         self.atualizar_menu("chat")
         self.limpar_main()
+
+        if conversa_id is not None:
+            self.conversa_id_atual = conversa_id
+
         ctk.CTkLabel(
-            self.main, text=f"Olá, {self.usuario_nome}.\nO que vamos fazer hoje?", font=("Segoe UI", 24, "bold"), text_color=("#17171c", "#ffffff")
-        ).grid(row=0, column=0, sticky="w", pady=(0, 15))
+            self.main,
+            text=f"Olá, {self.usuario_nome}.\nO que vamos fazer hoje?",
+            font=("Segoe UI", 24, "bold"),
+            text_color=("#17171c", "#ffffff"),
+        ).grid(
+            row=0,
+            column=0,
+            sticky="w",
+            pady=(0, 15),
+        )
 
         self.chat = ctk.CTkTextbox(
-            self.main, fg_color=("#ffffff", "#15151c"), text_color=("#17171c", "#eeeeee"), corner_radius=15, font=("Segoe UI", 14)
+            self.main,
+            fg_color=("#ffffff", "#15151c"),
+            text_color=("#17171c", "#eeeeee"),
+            corner_radius=15,
+            font=("Segoe UI", 14),
         )
-        self.chat.grid(row=1, column=0, sticky="nsew")
-        self.chat.insert("end", "Nova: Sistema iniciado com sucesso.\n\n")
+
+        self.chat.grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+        )
+
+        if conversa_id is None:
+            self.chat.insert(
+                "end",
+                "Nova: Sistema iniciado com sucesso.\n\n"
+            )
+
+        else:
+            mensagens = listar_mensagens_da_conversa(conversa_id)
+
+            for mensagem in mensagens:
+                remetente = mensagem["remetente"]
+                conteudo = mensagem["conteudo"]
+
+                self.chat.insert(
+                    "end",
+                    f"{remetente}: {conteudo}\n\n"
+                )
+
         self.chat.configure(state="disabled")
 
-        input_frame = ctk.CTkFrame(self.main, fg_color="transparent")
-        input_frame.grid(row=2, column=0, sticky="ew", pady=(15, 0))
+        input_frame = ctk.CTkFrame(
+            self.main,
+            fg_color="transparent",
+        )
+
+        input_frame.grid(
+            row=2,
+            column=0,
+            sticky="ew",
+            pady=(15, 0),
+        )
+
         input_frame.grid_columnconfigure(0, weight=1)
-        self.entrada = ctk.CTkEntry(input_frame, placeholder_text="Digite um comando... ex: pesquise Hollow Knight", height=45, font=("Segoe UI", 14))
-        self.entrada.grid(row=0, column=0, sticky="ew", padx=(0, 10))
+
+        self.entrada = ctk.CTkEntry(
+            input_frame,
+            placeholder_text="Digite um comando... ex: pesquise Hollow Knight",
+            height=45,
+            font=("Segoe UI", 14),
+        )
+
+        self.entrada.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+            padx=(0, 10),
+        )
+
         self.entrada.bind("<Return>", self.enviar_comando)
-        self.botao = ctk.CTkButton(input_frame, text="Enviar", height=45, font=("Segoe UI", 14, "bold"), command=self.enviar_comando)
-        self.botao.grid(row=0, column=1)
+
+        self.botao = ctk.CTkButton(
+            input_frame,
+            text="Enviar",
+            height=45,
+            font=("Segoe UI", 14, "bold"),
+            command=self.enviar_comando,
+        )
+
+        self.botao.grid(
+            row=0,
+            column=1,
+        )
+
         if self.processando:
             self.entrada.configure(state="disabled")
             self.botao.configure(state="disabled")
@@ -152,21 +231,266 @@ class NovaApp(ctk.CTk):
     def mostrar_historico(self):
         self.atualizar_menu("historico")
         self.limpar_main()
-        ctk.CTkLabel(self.main, text="Histórico de comandos", font=("Segoe UI", 24, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 15))
-        caixa = ctk.CTkTextbox(self.main, fg_color=("#ffffff", "#15151c"), corner_radius=15, font=("Segoe UI", 14))
-        caixa.grid(row=1, column=0, sticky="nsew")
-        caixa.insert("end", "\n".join(f"{i}. {comando}" for i, comando in enumerate(self.historico_comandos, 1)) or "Nenhum comando usado ainda.")
-        caixa.configure(state="disabled")
+
+        ctk.CTkLabel(
+            self.main,
+            text="Histórico de conversas",
+            font=("Segoe UI", 24, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            sticky="w",
+            pady=(0, 15)
+        )
+
+        historico_frame = ctk.CTkScrollableFrame(
+            self.main,
+            fg_color="transparent",
+        )
+
+        historico_frame.grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+        )
+
+        historico_frame.grid_columnconfigure(0, weight=1)
+
+        conversas = listar_conversas_do_usuario(self.usuario_id)
+
+        if not conversas:
+            ctk.CTkLabel(
+                historico_frame,
+                text="Nenhuma conversa encontrada.",
+                font=("Segoe UI", 14),
+                text_color="gray",
+            ).grid(
+                row=0,
+                column=0,
+                sticky="w",
+                padx=10,
+                pady=10
+            )
+
+            return
+
+        for i, conversa in enumerate(conversas):
+
+            card = ctk.CTkFrame(
+                historico_frame,
+                fg_color=("#ffffff", "#15151c"),
+                corner_radius=15,
+            )
+
+            card.grid(
+                row=i,
+                column=0,
+                sticky="ew",
+                padx=5,
+                pady=(0, 10),
+            )
+
+            card.grid_columnconfigure(0, weight=1)
+
+            ctk.CTkLabel(
+                card,
+                text=conversa["assunto"],
+                font=("Segoe UI", 15, "bold"),
+                anchor="w",
+            ).grid(
+                row=0,
+                column=0,
+                sticky="ew",
+                padx=18,
+                pady=(14, 2),
+            )
+
+            ctk.CTkLabel(
+                card,
+                text=f"Iniciada em: {conversa['data_inicio']}",
+                font=("Segoe UI", 12),
+                text_color="gray",
+                anchor="w",
+            ).grid(
+                row=1,
+                column=0,
+                sticky="ew",
+                padx=18,
+                pady=(0, 14),
+            )
 
     def mostrar_configuracoes(self):
         self.atualizar_menu("config")
         self.limpar_main()
-        ctk.CTkLabel(self.main, text="Configurações", font=("Segoe UI", 24, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 20))
-        ctk.CTkLabel(self.main, text="Aparência", font=("Segoe UI", 16, "bold")).grid(row=1, column=0, sticky="w", pady=(0, 10))
-        self.switch_modo = ctk.CTkSwitch(self.main, text="Modo claro", command=self.alternar_modo)
-        self.switch_modo.grid(row=2, column=0, sticky="w")
+
+        ctk.CTkLabel(
+            self.main,
+            text="Configurações",
+            font=("Segoe UI", 24, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            sticky="w",
+            pady=(0, 20),
+        )
+
+        # =========================
+        # APARÊNCIA
+        # =========================
+
+        aparencia_card = ctk.CTkFrame(
+            self.main,
+            fg_color=("#ffffff", "#15151c"),
+            corner_radius=15,
+        )
+
+        aparencia_card.grid(
+            row=1,
+            column=0,
+            sticky="ew",
+            pady=(0, 15),
+        )
+
+        aparencia_card.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            aparencia_card,
+            text="Aparência",
+            font=("Segoe UI", 16, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(15, 3),
+        )
+
+        ctk.CTkLabel(
+            aparencia_card,
+            text="Escolha como a Nova aparece para você.",
+            font=("Segoe UI", 12),
+            text_color="gray",
+        ).grid(
+            row=1,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(0, 12),
+        )
+
+        self.switch_modo = ctk.CTkSwitch(
+            aparencia_card,
+            text="Modo claro",
+            command=self.alternar_modo,
+        )
+
+        self.switch_modo.grid(
+            row=2,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(0, 15),
+        )
+
         if self.modo_atual == "light":
             self.switch_modo.select()
+
+        # =========================
+        # CONTA
+        # =========================
+
+        conta_card = ctk.CTkFrame(
+            self.main,
+            fg_color=("#ffffff", "#15151c"),
+            corner_radius=15,
+        )
+
+        conta_card.grid(
+            row=2,
+            column=0,
+            sticky="ew",
+            pady=(0, 15),
+        )
+
+        conta_card.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            conta_card,
+            text="Conta",
+            font=("Segoe UI", 16, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(15, 3),
+        )
+
+        ctk.CTkLabel(
+            conta_card,
+            text=f"Conectado como {self.usuario_nome}",
+            font=("Segoe UI", 13),
+        ).grid(
+            row=1,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(0, 4),
+        )
+
+        ctk.CTkLabel(
+            conta_card,
+            text="Sua conta mantém suas conversas separadas dos outros usuários.",
+            font=("Segoe UI", 12),
+            text_color="gray",
+        ).grid(
+            row=2,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(0, 15),
+        )
+
+        # =========================
+        # NOVA
+        # =========================
+
+        nova_card = ctk.CTkFrame(
+            self.main,
+            fg_color=("#ffffff", "#15151c"),
+            corner_radius=15,
+        )
+
+        nova_card.grid(
+            row=3,
+            column=0,
+            sticky="ew",
+        )
+
+        ctk.CTkLabel(
+            nova_card,
+            text="Nova",
+            font=("Segoe UI", 16, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(15, 3),
+        )
+
+        ctk.CTkLabel(
+            nova_card,
+            text="Mais opções da assistente serão adicionadas aqui.",
+            font=("Segoe UI", 12),
+            text_color="gray",
+        ).grid(
+            row=1,
+            column=0,
+            sticky="w",
+            padx=18,
+            pady=(0, 15),
+        )
 
     def alternar_modo(self):
         self.modo_atual = "light" if self.switch_modo.get() else "dark"
@@ -182,10 +506,18 @@ class NovaApp(ctk.CTk):
 
     def concluir_processamento(self, resposta):
         self.processando = False
+
+        criar_mensagem(
+            conversa_id=self.conversa_id_atual,
+            remetente="nova",
+            conteudo=resposta,
+        )
+
         if hasattr(self, "entrada") and self.entrada.winfo_exists():
             self.entrada.configure(state="normal")
             self.botao.configure(state="normal")
             self.entrada.focus()
+
         self.escrever_chat(f"Nova: {resposta}")
 
     def verificar_resultados(self):
@@ -200,8 +532,11 @@ class NovaApp(ctk.CTk):
         def tarefa():
             try:
                 resposta = processar_comando(comando)
-            except Exception:
+            except Exception as erro:
+                print(f"[ERRO] Comando: {comando}")
+                print(f"[ERRO] {type(erro).__name__}: {erro}")
                 resposta = "Ocorreu um erro ao executar esse comando."
+
             self.resultados.put(resposta)
 
         self.processando = True
@@ -219,6 +554,18 @@ class NovaApp(ctk.CTk):
         self.entrada.delete(0, "end")
         self.historico_comandos.append(comando)
         self.escrever_chat(f"Você: {comando}")
+        
+        if self.conversa_id_atual is None:
+            self.conversa_id_atual = criar_conversa(
+                usuario_id=self.usuario_id,
+                assunto=comando,
+            )
+
+        criar_mensagem(
+                conversa_id=self.conversa_id_atual,
+                remetente="usuario",
+                conteudo=comando,
+            )
 
         # O conteúdo é sempre salvo antes de tentar interpretar um novo comando.
         if self.aguardando_arquivo:
