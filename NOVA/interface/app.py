@@ -3,6 +3,7 @@ from queue import Empty, Queue
 
 import customtkinter as ctk
 
+from NOVA.interface.theme import *
 from NOVA.commands.actions import criar_arquivo_texto, preparar_nome_arquivo, processar_comando
 from NOVA.database.conversas import criar_conversa, listar_conversas_do_usuario
 from NOVA.database.mensagens import criar_mensagem, listar_mensagens_da_conversa
@@ -46,16 +47,17 @@ class NovaApp(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        self.sidebar = ctk.CTkFrame(self, width=220, fg_color=("#e7e7ed", "#000000"), corner_radius=0)
+        self.sidebar = ctk.CTkFrame(self, width=220, fg_color=("#e7e7ed", "#111118"), corner_radius=0)
         self.sidebar.grid(row=0, column=0, sticky="nsw")
         self.sidebar.grid_propagate(False)
-
+        
         self.logo = ctk.CTkLabel(
         self.sidebar,
         text="◉",
         font=("Segoe UI", 32),
         text_color="#ab19ff"
         )
+        
         self.logo.pack(pady=(25, 20))
         self.btn_chat = ctk.CTkButton(
         self.sidebar,
@@ -68,6 +70,23 @@ class NovaApp(ctk.CTk):
         text_color=("#333333", "#dddddd"),
         command=self.mostrar_chat,
     )
+        self.btn_nova_conversa = ctk.CTkButton(
+            self.sidebar,
+            text="+ Nova conversa",
+            anchor="w",
+            height=42,
+            corner_radius=8,
+            fg_color=("#d9d9e3", "#15151c"),
+            hover_color=("#cfcfda", "#241528"),
+            text_color=("#222222", "#ffffff"),
+            command=self.nova_conversa,
+        )
+
+        self.btn_nova_conversa.pack(
+            fill="x",
+            padx=12,
+            pady=(0, 12)
+        )
 
         self.btn_historico = ctk.CTkButton(
             self.sidebar,
@@ -133,7 +152,11 @@ class NovaApp(ctk.CTk):
         self.limpar_main()
 
         if conversa_id is not None:
+            if conversa_id != self.conversa_id_atual:
+                self.aguardando_arquivo = False
+                self.nome_arquivo = ""
             self.conversa_id_atual = conversa_id
+        conversa_id = self.conversa_id_atual
 
         ctk.CTkLabel(
             self.main,
@@ -275,11 +298,14 @@ class NovaApp(ctk.CTk):
             return
 
         for i, conversa in enumerate(conversas):
+            conversa_id = conversa["id"]
+
 
             card = ctk.CTkFrame(
                 historico_frame,
                 fg_color=("#ffffff", "#15151c"),
                 corner_radius=15,
+                cursor="hand2",
             )
 
             card.grid(
@@ -292,12 +318,20 @@ class NovaApp(ctk.CTk):
 
             card.grid_columnconfigure(0, weight=1)
 
-            ctk.CTkLabel(
+            card.bind(
+                "<Button-1>",
+                lambda event, cid=conversa_id: self.abrir_conversa(cid)
+            )
+
+                    # Título
+            titulo = ctk.CTkLabel(
                 card,
                 text=conversa["assunto"],
                 font=("Segoe UI", 15, "bold"),
                 anchor="w",
-            ).grid(
+            )
+
+            titulo.grid(
                 row=0,
                 column=0,
                 sticky="ew",
@@ -305,19 +339,36 @@ class NovaApp(ctk.CTk):
                 pady=(14, 2),
             )
 
-            ctk.CTkLabel(
+            # Data
+            data = ctk.CTkLabel(
                 card,
                 text=f"Iniciada em: {conversa['data_inicio']}",
                 font=("Segoe UI", 12),
                 text_color="gray",
                 anchor="w",
-            ).grid(
+            )
+
+            data.grid(
                 row=1,
                 column=0,
                 sticky="ew",
                 padx=18,
                 pady=(0, 14),
             )
+
+            # Clique
+            abrir = lambda event, cid=conversa_id: self.abrir_conversa(cid)
+
+            card.bind("<Button-1>", abrir)
+            titulo.bind("<Button-1>", abrir)
+            data.bind("<Button-1>", abrir)
+
+    def abrir_conversa(self, conversa_id):
+        self.mostrar_chat(conversa_id)
+
+    def nova_conversa(self):
+        self.conversa_id_atual = None
+        self.mostrar_chat()
 
     def mostrar_configuracoes(self):
         self.atualizar_menu("config")
@@ -504,11 +555,13 @@ class NovaApp(ctk.CTk):
         self.chat.see("end")
         self.chat.configure(state="disabled")
 
-    def concluir_processamento(self, resposta):
+    def concluir_processamento(self, resposta, conversa_id=None):
         self.processando = False
+        if conversa_id is None:
+            conversa_id = self.conversa_id_atual
 
         criar_mensagem(
-            conversa_id=self.conversa_id_atual,
+            conversa_id=conversa_id,
             remetente="nova",
             conteudo=resposta,
         )
@@ -518,17 +571,21 @@ class NovaApp(ctk.CTk):
             self.botao.configure(state="normal")
             self.entrada.focus()
 
-        self.escrever_chat(f"Nova: {resposta}")
+        if conversa_id == self.conversa_id_atual:
+            self.escrever_chat(f"Nova: {resposta}")
 
     def verificar_resultados(self):
         try:
             while True:
-                self.concluir_processamento(self.resultados.get_nowait())
+                conversa_id, resposta = self.resultados.get_nowait()
+                self.concluir_processamento(resposta, conversa_id)
         except Empty:
             pass
         self.after(100, self.verificar_resultados)
 
     def executar_comando_em_segundo_plano(self, comando):
+        conversa_id = self.conversa_id_atual
+
         def tarefa():
             try:
                 resposta = processar_comando(comando)
@@ -537,7 +594,7 @@ class NovaApp(ctk.CTk):
                 print(f"[ERRO] {type(erro).__name__}: {erro}")
                 resposta = "Ocorreu um erro ao executar esse comando."
 
-            self.resultados.put(resposta)
+            self.resultados.put((conversa_id, resposta))
 
         self.processando = True
         self.entrada.configure(state="disabled")
@@ -572,7 +629,7 @@ class NovaApp(ctk.CTk):
             resposta = criar_arquivo_texto(self.nome_arquivo, comando)
             self.aguardando_arquivo = False
             self.nome_arquivo = ""
-            self.escrever_chat(f"Nova: {resposta}")
+            self.concluir_processamento(resposta)
             return
 
         intencao = interpretar_local(comando)
@@ -580,10 +637,10 @@ class NovaApp(ctk.CTk):
             try:
                 self.nome_arquivo = preparar_nome_arquivo(intencao["valor"]).name
             except ValueError as erro:
-                self.escrever_chat(f"Nova: {erro}")
+                self.concluir_processamento(str(erro))
                 return
             self.aguardando_arquivo = True
-            self.escrever_chat(f"Nova: O que deseja escrever em '{self.nome_arquivo}'?")
+            self.concluir_processamento(f"O que deseja escrever em '{self.nome_arquivo}'?")
             return
 
         self.executar_comando_em_segundo_plano(comando)

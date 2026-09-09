@@ -39,7 +39,7 @@ class ConversasDatabaseTest(unittest.TestCase):
 
         self.assertEqual(conversa[1], usuario_id)
         self.assertEqual(conversa[2], "Primeira conversa")
-        self.assertIsNone(conversa[4])
+        self.assertIsNone(conversa["data_fim"])
 
     def test_listar_conversas_do_usuario(self):
         usuario_id = self.criar_usuario_teste()
@@ -64,7 +64,7 @@ class ConversasDatabaseTest(unittest.TestCase):
         self.assertTrue(encerrar_conversa(conversa_id, self.db_path))
         conversa = buscar_conversa_por_id(conversa_id, self.db_path)
 
-        self.assertIsNotNone(conversa[4])
+        self.assertIsNotNone(conversa["data_fim"])
 
     def test_excluir_usuario_remove_conversas_em_cascata(self):
         usuario_id = self.criar_usuario_teste()

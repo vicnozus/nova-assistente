@@ -1,0 +1,11 @@
+BG = "#0b0b0f"
+SIDEBAR_BG = "#09090d"
+
+CARD_BG = "#15151c"
+
+PURPLE = "#8b5cf6"
+PURPLE_HOVER = "#7c3aed"
+PURPLE_DARK = "#2e163d"
+
+TEXT_PRIMARY = "#f4f4f5"
+TEXT_SECONDARY = "#a1a1aa"

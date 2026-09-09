@@ -5,6 +5,7 @@ import sqlite3
 
 from NOVA.database.connection import conectar
 from NOVA.database.conversas import criar_tabela_conversas
+from NOVA.database.mensagens import criar_tabela_mensagens
 from NOVA.utils.paths import DATABASE_DIR, NOVA_DB_PATH
 
 
@@ -23,6 +24,7 @@ def inicializar_banco(db_path=NOVA_DB_PATH):
             """
         )
         criar_tabela_conversas(conexao)
+        criar_tabela_mensagens(conexao)
     migrar_usuarios_legados(db_path)
 
 

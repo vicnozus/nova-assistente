@@ -1,11 +1,5 @@
-from NOVA.database.connection import conectar
-from NOVA.database.users import criar_tabela_usuarios
-from NOVA.database.conversas import criar_tabela_conversas
-from NOVA.database.mensagens import criar_tabela_mensagens
+"""Ponto de entrada compatível para a inicialização completa do banco."""
 
+from NOVA.database.users import inicializar_banco
 
-def inicializar_banco() -> None:
-    with conectar() as conexao:
-        criar_tabela_usuarios(conexao)
-        criar_tabela_conversas(conexao)
-        criar_tabela_mensagens(conexao)
+__all__ = ["inicializar_banco"]
