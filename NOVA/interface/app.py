@@ -3,6 +3,7 @@ from queue import Empty, Queue
 
 import customtkinter as ctk
 
+from PIL import Image
 from NOVA.interface.theme import *
 from NOVA.commands.actions import criar_arquivo_texto, preparar_nome_arquivo, processar_comando
 from NOVA.database.conversas import criar_conversa, listar_conversas_do_usuario
@@ -51,41 +52,49 @@ class NovaApp(ctk.CTk):
         self.sidebar.grid(row=0, column=0, sticky="nsw")
         self.sidebar.grid_propagate(False)
         
+        self.logo_img = ctk.CTkImage(
+            light_image=Image.open("Nova/assets/nova.png"),
+            dark_image=Image.open("Nova/assets/nova.png"),
+            size=(48, 48)
+        )
+
         self.logo = ctk.CTkLabel(
-        self.sidebar,
-        text="◉",
-        font=("Segoe UI", 32),
-        text_color="#ab19ff"
+            self.sidebar,
+            text="",
+            image=self.logo_img
         )
         
         self.logo.pack(pady=(25, 20))
         self.btn_chat = ctk.CTkButton(
-        self.sidebar,
-        text="💬  Conversa",
-        anchor="w",
-        height=42,
-        corner_radius=0,
-        fg_color="transparent",
-        hover_color=("#ddddE8", "#241528"),
-        text_color=("#333333", "#dddddd"),
-        command=self.mostrar_chat,
-    )
-        self.btn_nova_conversa = ctk.CTkButton(
             self.sidebar,
-            text="+ Nova conversa",
+            text="💬  Conversa",
             anchor="w",
             height=42,
             corner_radius=8,
-            fg_color=("#d9d9e3", "#15151c"),
-            hover_color=("#cfcfda", "#241528"),
-            text_color=("#222222", "#ffffff"),
-            command=self.nova_conversa,
+            fg_color="transparent",
+            hover_color=NAV_HOVER,
+            text_color=TEXT_SECONDARY,
+            command=self.mostrar_chat,
+        )
+        self.btn_nova_conversa = ctk.CTkButton(
+            self.sidebar,
+            text="+  Nova conversa",
+            anchor="w",
+            height=42,
+            corner_radius=10,
+
+            fg_color=PURPLE,
+            hover_color=PURPLE_HOVER,
+
+            text_color="white",
+
+            command=self.nova_conversa
         )
 
         self.btn_nova_conversa.pack(
             fill="x",
             padx=12,
-            pady=(0, 12)
+            pady=(0, 18)
         )
 
         self.btn_historico = ctk.CTkButton(
@@ -95,8 +104,8 @@ class NovaApp(ctk.CTk):
             height=42,
             corner_radius=0,
             fg_color="transparent",
-            hover_color=("#ddddE8", "#1f1f2a"),
-            text_color=("#333333", "#aaaaaa"),
+            hover_color=NAV_HOVER,
+            text_color=TEXT_SECONDARY,
             command=self.mostrar_historico,
         )
 
@@ -107,13 +116,17 @@ class NovaApp(ctk.CTk):
             height=42,
             corner_radius=0,
             fg_color="transparent",
-            hover_color=("#ddddE8", "#1f1f2a"),
-            text_color=("#333333", "#aaaaaa"),
+            hover_color=NAV_HOVER,
+            text_color=TEXT_SECONDARY,
             command=self.mostrar_configuracoes,
         )
 
         for botao in (self.btn_chat, self.btn_historico, self.btn_config):
-            botao.pack(fill="x", padx=0, pady=2)
+            botao.pack(
+                fill="x",
+                padx=10,
+                pady=2
+            )
 
         self.main = ctk.CTkFrame(
             self,
@@ -138,13 +151,13 @@ class NovaApp(ctk.CTk):
         ):
             if nome == ativo:
                 botao.configure(
-                    fg_color=("#eadfff", "#2a102f"),
-                    text_color=("#58008b", "#ffffff"),
+                    fg_color=("#e9ddff", "#24162e"),
+                    text_color=("#6d28d9", "#ffffff"),
                 )
             else:
                 botao.configure(
-                    fg_color="transparent",
-                    text_color=("#555555", "#aaaaaa"),
+                    fg_color=("#e9ddff", "#24162e"),
+                    text_color=("#6d28d9", "#ffffff"),
                 )
 
     def mostrar_chat(self, conversa_id=None):
@@ -172,10 +185,11 @@ class NovaApp(ctk.CTk):
 
         self.chat = ctk.CTkTextbox(
             self.main,
-            fg_color=("#ffffff", "#15151c"),
-            text_color=("#17171c", "#eeeeee"),
-            corner_radius=15,
+            fg_color=BG,
+            text_color=TEXT_PRIMARY,
+            corner_radius=0,
             font=("Segoe UI", 14),
+            border_width=0,
         )
 
         self.chat.grid(
@@ -220,36 +234,44 @@ class NovaApp(ctk.CTk):
 
         self.entrada = ctk.CTkEntry(
             input_frame,
-            placeholder_text="Digite um comando... ex: pesquise Hollow Knight",
-            height=45,
-            font=("Segoe UI", 14),
+            placeholder_text="Digite uma mensagem para a Nova...",
+            height=46,
+            corner_radius=12,
+            fg_color=INPUT_BG,
+            border_color=INPUT_BORDER,
+            border_width=1,
+            text_color=TEXT_PRIMARY,
+            placeholder_text_color=TEXT_SECONDARY,
         )
 
         self.entrada.grid(
             row=0,
             column=0,
             sticky="ew",
-            padx=(0, 10),
+            padx=(0, 10)
         )
 
         self.entrada.bind("<Return>", self.enviar_comando)
 
-        self.botao = ctk.CTkButton(
+        self.btn_enviar = ctk.CTkButton(
             input_frame,
-            text="Enviar",
-            height=45,
-            font=("Segoe UI", 14, "bold"),
+            text="➤",
+            width=60,
+            height=46,
+            corner_radius=12,
+            fg_color=PURPLE,
+            hover_color=PURPLE_HOVER,
             command=self.enviar_comando,
         )
 
-        self.botao.grid(
+        self.btn_enviar.grid(
             row=0,
             column=1,
         )
 
         if self.processando:
             self.entrada.configure(state="disabled")
-            self.botao.configure(state="disabled")
+            self.btn_enviar.configure(state="disabled")
 
     def mostrar_historico(self):
         self.atualizar_menu("historico")
@@ -568,7 +590,7 @@ class NovaApp(ctk.CTk):
 
         if hasattr(self, "entrada") and self.entrada.winfo_exists():
             self.entrada.configure(state="normal")
-            self.botao.configure(state="normal")
+            self.btn_enviar.configure(state="normal")
             self.entrada.focus()
 
         if conversa_id == self.conversa_id_atual:
@@ -598,7 +620,7 @@ class NovaApp(ctk.CTk):
 
         self.processando = True
         self.entrada.configure(state="disabled")
-        self.botao.configure(state="disabled")
+        self.btn_enviar.configure(state="disabled")
         threading.Thread(target=tarefa, daemon=True).start()
 
     def enviar_comando(self, event=None):

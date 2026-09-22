@@ -43,7 +43,7 @@ class HistoricoTest(unittest.TestCase):
             usuario_id=1, usuario_nome="Teste", conversa_id_atual=None,
             processando=False, aguardando_arquivo=False, nome_arquivo="",
             historico_comandos=[], resultados=Queue(), main=MagicMock(),
-            entrada=MagicMock(), botao=MagicMock(), atualizar_menu=MagicMock(),
+            entrada=MagicMock(), btn_enviar=MagicMock(), atualizar_menu=MagicMock(),
             limpar_main=MagicMock(), escrever_chat=MagicMock(), after=MagicMock(),
             executar_comando_em_segundo_plano=MagicMock(),
         )
