@@ -2,11 +2,11 @@ import customtkinter as ctk
 
 from NOVA.database.users import autenticar_usuario, criar_usuario, inicializar_banco
 from NOVA.interface.app import NovaApp
-from NOVA.utils.paths import ICON_PATH
+from NOVA.utils.paths import DARK_PURPLE_THEME_PATH, ICON_PATH
 
 
 ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("dark-blue")
+ctk.set_default_color_theme(str(DARK_PURPLE_THEME_PATH))
 
 
 class LoginApp(ctk.CTk):

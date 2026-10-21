@@ -37,7 +37,8 @@ def abrir_app(nome_app):
 
 
 def pesquisar_wikipedia(termo):
-    termo = limpar_valor(termo)
+    termo = termo.strip()
+
     if not termo:
         return "Me diga o que você quer pesquisar."
 
@@ -55,6 +56,8 @@ def pesquisar_wikipedia(termo):
         if not resultados:
             return "Não encontrei nada sobre isso. Tente outro termo."
 
+        print("[DEBUG] Termo pesquisado:", termo)
+        print("[DEBUG] Página selecionada:", resultados[0]["title"])
         resumo = requests.get(
             url,
             params={
@@ -73,12 +76,13 @@ def pesquisar_wikipedia(termo):
         for pagina in resumo.json().get("query", {}).get("pages", {}).values():
             texto = pagina.get("extract", "").strip()
             if texto:
-                return texto[:800] + ("..." if len(texto) > 800 else "")
+                return texto[:2000] + ("..." if len(texto) > 2000 else "")
         return "Encontrei a página, mas ela não tem resumo disponível."
     except requests.RequestException:
         return "Não consegui pesquisar agora. Verifique sua conexão e tente novamente."
     except ValueError:
         return "A Wikipédia retornou uma resposta inválida. Tente novamente."
+
 
 
 def preparar_nome_arquivo(nome):
@@ -122,6 +126,9 @@ def extrair_zip(valor):
 
 def processar_comando(comando_usuario):
     dados = interpretar_local(comando_usuario) or inteligencia_assistente(comando_usuario)
+    print("[DEBUG] Comando:", comando_usuario)
+    print("[DEBUG] Interpretação:", dados)
+
     if not isinstance(dados, dict):
         return "Não consegui entender esse comando."
 

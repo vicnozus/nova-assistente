@@ -9,10 +9,10 @@ from NOVA.commands.actions import criar_arquivo_texto, preparar_nome_arquivo, pr
 from NOVA.database.conversas import criar_conversa, listar_conversas_do_usuario
 from NOVA.database.mensagens import criar_mensagem, listar_mensagens_da_conversa
 from NOVA.models.intent import interpretar_local
-from NOVA.utils.paths import ICON_PATH
+from NOVA.utils.paths import DARK_PURPLE_THEME_PATH, ICON_PATH
 
 ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("dark-blue")
+ctk.set_default_color_theme(str(DARK_PURPLE_THEME_PATH))
 
 
 class NovaApp(ctk.CTk):
@@ -52,22 +52,70 @@ class NovaApp(ctk.CTk):
         self.sidebar.grid(row=0, column=0, sticky="nsw")
         self.sidebar.grid_propagate(False)
         
+                # Logo / identidade da Nova
+        self.logo_frame = ctk.CTkFrame(
+            self.sidebar,
+            fg_color="transparent"
+        )
+
+        self.logo_frame.pack(
+            fill="x",
+            padx=18,
+            pady=(24, 20)
+        )
+
         self.logo_img = ctk.CTkImage(
             light_image=Image.open("Nova/assets/nova.png"),
             dark_image=Image.open("Nova/assets/nova.png"),
-            size=(48, 48)
+            size=(40, 40)
         )
 
         self.logo = ctk.CTkLabel(
-            self.sidebar,
+            self.logo_frame,
             text="",
             image=self.logo_img
         )
-        
-        self.logo.pack(pady=(25, 20))
+
+        self.logo.pack(
+            side="left"
+        )
+
+        self.logo_texto = ctk.CTkLabel(
+            self.logo_frame,
+            text="NOVA",
+            font=("Segoe UI", 18, "bold"),
+            text_color=TEXT_PRIMARY
+        )
+
+        self.logo_texto.pack(
+            side="left",
+            padx=(10, 0)
+        )
+
+                # Ícones da navegação
+        self.icon_chat = ctk.CTkImage(
+            light_image=Image.open("Nova/assets/icons/chat.png"),
+            dark_image=Image.open("Nova/assets/icons/chat.png"),
+            size=(22, 22)
+        )
+
+        self.icon_history = ctk.CTkImage(
+            light_image=Image.open("Nova/assets/icons/history.png"),
+            dark_image=Image.open("Nova/assets/icons/history.png"),
+            size=(22, 22)
+        )
+
+        self.icon_settings = ctk.CTkImage(
+            light_image=Image.open("Nova/assets/icons/settings.png"),
+            dark_image=Image.open("Nova/assets/icons/settings.png"),
+            size=(22, 22)
+        )
+
         self.btn_chat = ctk.CTkButton(
             self.sidebar,
-            text="💬  Conversa",
+            text="Conversa",
+            image=self.icon_chat,
+            compound="left",
             anchor="w",
             height=42,
             corner_radius=8,
@@ -76,6 +124,36 @@ class NovaApp(ctk.CTk):
             text_color=TEXT_SECONDARY,
             command=self.mostrar_chat,
         )
+
+        self.btn_historico = ctk.CTkButton(
+            self.sidebar,
+            text="Histórico",
+            image=self.icon_history,
+            compound="left",
+            anchor="w",
+            height=42,
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color=NAV_HOVER,
+            text_color=TEXT_SECONDARY,
+            command=self.mostrar_historico,
+        )
+
+        self.btn_config = ctk.CTkButton(
+            self.sidebar,
+            text="Configurações",
+            image=self.icon_settings,
+            compound="left",
+            anchor="w",
+            height=42,
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color=NAV_HOVER,
+            text_color=TEXT_SECONDARY,
+            command=self.mostrar_configuracoes,
+        )
+
+
         self.btn_nova_conversa = ctk.CTkButton(
             self.sidebar,
             text="+  Nova conversa",
@@ -97,29 +175,6 @@ class NovaApp(ctk.CTk):
             pady=(0, 18)
         )
 
-        self.btn_historico = ctk.CTkButton(
-            self.sidebar,
-            text="◷  Histórico",
-            anchor="w",
-            height=42,
-            corner_radius=0,
-            fg_color="transparent",
-            hover_color=NAV_HOVER,
-            text_color=TEXT_SECONDARY,
-            command=self.mostrar_historico,
-        )
-
-        self.btn_config = ctk.CTkButton(
-            self.sidebar,
-            text="⚙  Configurações",
-            anchor="w",
-            height=42,
-            corner_radius=0,
-            fg_color="transparent",
-            hover_color=NAV_HOVER,
-            text_color=TEXT_SECONDARY,
-            command=self.mostrar_configuracoes,
-        )
 
         for botao in (self.btn_chat, self.btn_historico, self.btn_config):
             botao.pack(
@@ -127,6 +182,61 @@ class NovaApp(ctk.CTk):
                 padx=10,
                 pady=2
             )
+
+        # =========================
+        # RODAPÉ DA SIDEBAR
+        # =========================
+
+        self.sidebar_footer = ctk.CTkFrame(
+            self.sidebar,
+            fg_color="transparent"
+        )
+
+        self.sidebar_footer.pack(
+            side="bottom",
+            fill="x",
+            padx=14,
+            pady=16
+        )
+
+        # Linha divisória
+        self.footer_divider = ctk.CTkFrame(
+            self.sidebar_footer,
+            height=1,
+            fg_color=("#cccccc", "#292933")
+        )
+
+        self.footer_divider.pack(
+            fill="x",
+            pady=(0, 14)
+        )
+
+        # Status
+        self.footer_status = ctk.CTkLabel(
+            self.sidebar_footer,
+            text="●  Nova online",
+            font=("Segoe UI", 12),
+            text_color=("#6d28d9", "#a970ff"),
+            anchor="w"
+        )
+
+        self.footer_status.pack(
+            fill="x"
+        )
+
+        # Usuário
+        self.footer_usuario = ctk.CTkLabel(
+            self.sidebar_footer,
+            text=self.usuario_nome,
+            font=("Segoe UI", 13, "bold"),
+            text_color=TEXT_PRIMARY,
+            anchor="w"
+        )
+
+        self.footer_usuario.pack(
+            fill="x",
+            pady=(4, 0)
+        )
 
         self.main = ctk.CTkFrame(
             self,
@@ -156,8 +266,8 @@ class NovaApp(ctk.CTk):
                 )
             else:
                 botao.configure(
-                    fg_color=("#e9ddff", "#24162e"),
-                    text_color=("#6d28d9", "#ffffff"),
+                    fg_color="transparent",
+                    text_color=TEXT_SECONDARY,
                 )
 
     def mostrar_chat(self, conversa_id=None):
@@ -183,13 +293,10 @@ class NovaApp(ctk.CTk):
             pady=(0, 15),
         )
 
-        self.chat = ctk.CTkTextbox(
+        self.chat = ctk.CTkScrollableFrame(
             self.main,
-            fg_color=BG,
-            text_color=TEXT_PRIMARY,
+            fg_color="transparent",
             corner_radius=0,
-            font=("Segoe UI", 14),
-            border_width=0,
         )
 
         self.chat.grid(
@@ -198,10 +305,12 @@ class NovaApp(ctk.CTk):
             sticky="nsew",
         )
 
+        self.chat.grid_columnconfigure(0, weight=1)
+
         if conversa_id is None:
-            self.chat.insert(
-                "end",
-                "Nova: Sistema iniciado com sucesso.\n\n"
+            self.adicionar_mensagem(
+                "nova",
+                "Sistema iniciado com sucesso."
             )
 
         else:
@@ -211,12 +320,11 @@ class NovaApp(ctk.CTk):
                 remetente = mensagem["remetente"]
                 conteudo = mensagem["conteudo"]
 
-                self.chat.insert(
-                    "end",
-                    f"{remetente}: {conteudo}\n\n"
+                self.adicionar_mensagem(
+                    remetente,
+                    conteudo
                 )
 
-        self.chat.configure(state="disabled")
 
         input_frame = ctk.CTkFrame(
             self.main,
@@ -273,6 +381,86 @@ class NovaApp(ctk.CTk):
             self.entrada.configure(state="disabled")
             self.btn_enviar.configure(state="disabled")
 
+    def adicionar_mensagem(self, remetente, conteudo):
+
+        # Uma linha ocupa toda a largura do chat
+        linha = ctk.CTkFrame(
+            self.chat,
+            fg_color="transparent"
+        )
+
+        linha.pack(
+            fill="x",
+            padx=8,
+            pady=6
+        )
+
+        # =========================
+        # USUÁRIO
+        # =========================
+        if remetente == "usuario":
+
+            mensagem = ctk.CTkLabel(
+                linha,
+                text=conteudo,
+                font=("Segoe UI", 14),
+                text_color="#ffffff",
+                fg_color=("#7c3aed", "#5b21b6"),
+                corner_radius=14,
+                anchor="w",
+                justify="left",
+                wraplength=550,
+            )
+
+            mensagem.pack(
+                side="right",
+                padx=(120, 5),
+                ipadx=12,
+                ipady=8
+            )
+
+        # =========================
+        # NOVA
+        # =========================
+        else:
+
+            bloco_nova = ctk.CTkFrame(
+                linha,
+                fg_color="transparent"
+            )
+
+            bloco_nova.pack(
+                side="left",
+                padx=(5, 120)
+            )
+
+            nome = ctk.CTkLabel(
+                bloco_nova,
+                text="Nova",
+                font=("Segoe UI", 12, "bold"),
+                text_color=("#6d28d9", "#a970ff"),
+                anchor="w"
+            )
+
+            nome.pack(
+                anchor="w",
+                pady=(0, 3)
+            )
+
+            mensagem = ctk.CTkLabel(
+                bloco_nova,
+                text=conteudo,
+                font=("Segoe UI", 14),
+                text_color=TEXT_PRIMARY,
+                anchor="w",
+                justify="left",
+                wraplength=650
+            )
+
+            mensagem.pack(
+                anchor="w"
+            )
+            
     def mostrar_historico(self):
         self.atualizar_menu("historico")
         self.limpar_main()
@@ -569,13 +757,14 @@ class NovaApp(ctk.CTk):
         self.modo_atual = "light" if self.switch_modo.get() else "dark"
         ctk.set_appearance_mode(self.modo_atual)
 
-    def escrever_chat(self, texto):
+    def escrever_chat(self, remetente, conteudo):
         if not hasattr(self, "chat") or not self.chat.winfo_exists():
             return
-        self.chat.configure(state="normal")
-        self.chat.insert("end", f"{texto}\n\n")
-        self.chat.see("end")
-        self.chat.configure(state="disabled")
+
+        self.adicionar_mensagem(remetente, conteudo)
+
+        self.chat.update_idletasks()
+        self.chat._parent_canvas.yview_moveto(1.0)
 
     def concluir_processamento(self, resposta, conversa_id=None):
         self.processando = False
@@ -594,7 +783,7 @@ class NovaApp(ctk.CTk):
             self.entrada.focus()
 
         if conversa_id == self.conversa_id_atual:
-            self.escrever_chat(f"Nova: {resposta}")
+            self.escrever_chat("nova", resposta)
 
     def verificar_resultados(self):
         try:
@@ -632,8 +821,8 @@ class NovaApp(ctk.CTk):
 
         self.entrada.delete(0, "end")
         self.historico_comandos.append(comando)
-        self.escrever_chat(f"Você: {comando}")
-        
+        self.escrever_chat("usuario", comando)
+
         if self.conversa_id_atual is None:
             self.conversa_id_atual = criar_conversa(
                 usuario_id=self.usuario_id,

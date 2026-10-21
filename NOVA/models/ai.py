@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
-ACOES_PERMITIDAS = {"pesquisar", "abrir_app", "criar_arquivo", "extrair_zip"}
+ACOES_PERMITIDAS = {"pesquisar", "abrir_app", "criar_arquivo", "extrair_zip","conversar"}
 
 
 def inteligencia_assistente(comando_usuario):
